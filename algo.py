@@ -23,7 +23,11 @@ def addToTab(activityList):
         d['count'] = d['count'] + 1
 
 def generateNetworks(numberOfNetworks):
-for i in range(numberOfNetworks):
+sys.stdout=open("out.txt","w")
+#w to clean the output file
+print ( )
+sys.stdout.close()
+for i in range(numberofNetworks):
     events = [[]]
     for x in range(9):
         newState = []
@@ -41,7 +45,11 @@ for i in range(numberOfNetworks):
             events = [newState]
         else:
             events.append(newState)
-    print(events)
+    sys.stdout=open("out.txt","a")
+    #a to append
+    print (events)
+    sys.stdout.close()
+    #print(events)
 #The output "events" gives for each iteration (100) the possible paths of a network
 
 
