@@ -114,3 +114,13 @@ print(transitionMatrix)
 #nx.draw_networkx_edge_labels(G,pos,edge_labels=edge_labels,)
 #nx.draw(G,pos)
 #plt.show()
+
+
+## TO DO : 
+#- **Implement a Function to change the probability of throughput**
+#- **Implement a Function to choose a path naively**
+#- **Implement the Function to optimize the path choosing**
+#- **Implement control Function**
+#- **generate 100 scenario**
+#- **Test first routing rule 100 times**
+#
