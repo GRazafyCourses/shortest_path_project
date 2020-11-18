@@ -68,16 +68,18 @@ transitionMatrix = [[0.1,0.6,0.3],[0.1,0.7,0.2],[0.15,0.85]]
 G = nx.MultiDiGraph()
 
 
-
+for e in transitionMatrix:
+  for i in range(0,len(e)):
+    e[i] = 1/len(e)
 
 #Filling edges for the graph
 for i in range(0,len(events)):
   for e in range(0,len(events[i])):
-    G.add_edges_from([tuple(list(events[i][e]))],weight=transitionMatrix[i][e],label=transitionMatrix[i][e])
+    G.add_edges_from([tuple(list(events[i][e]))],weight=transitionMatrix[i][e])
 
 
-if sum(transitionMatrix[0])+sum(transitionMatrix[1])+sum(transitionMatrix[1]) != 3:
-  sys.exit("Transition matrix doesn't have the awaited total")
+#if sum(transitionMatrix[0])+sum(transitionMatrix[1])+sum(transitionMatrix[1]) != 3:
+#  sys.exit("Transition matrix doesn't have the awaited total")
 
 
 #adding labels on edges
@@ -104,9 +106,11 @@ subdfStates.plot(kind='bar').get_figure()
 
 
 
+print(transitionMatrix)
+
 #print the Graph
-pos=nx.spring_layout(G)
-write_dot(G,'graph.dot')
-nx.draw_networkx_edge_labels(G,pos,edge_labels=edge_labels,)
-nx.draw(G,pos)
-plt.show()
+#pos=nx.spring_layout(G)
+#write_dot(G,'graph.dot')
+#nx.draw_networkx_edge_labels(G,pos,edge_labels=edge_labels,)
+#nx.draw(G,pos)
+#plt.show()
