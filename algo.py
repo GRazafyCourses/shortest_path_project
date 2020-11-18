@@ -1,6 +1,5 @@
-
 import numpy as np
-import random as rm
+import random
 import sys
 import networkx as nx
 from networkx.drawing.nx_agraph import write_dot
@@ -22,6 +21,28 @@ def addToTab(activityList):
     for d in tabStates:
       if(d.get('Path') == str(activityList)):
         d['count'] = d['count'] + 1
+
+def generateNetworks(numberOfNetworks):
+for i in range(numberOfNetworks):
+    events = [[]]
+    for x in range(9):
+        newState = []
+        count = 0
+        event = x+1
+        prob=60
+        while count != 4 and event <= 10:
+            if random.randrange(100) < prob or event==x+2:
+                transition = str(x+1)+str(event)
+                newState.append(transition)
+                count += 1
+            event += 1
+            prob -= 5
+        if events == [[]]:
+            events = [newState]
+        else:
+            events.append(newState)
+    print(events)
+#The output "events" gives for each iteration (100) the possible paths of a network
 
 
 def activity(iteration):
@@ -52,7 +73,7 @@ def activity(iteration):
 
 
 
-
+#generateNetworks(100)
 
 #States
 states = ["1","2","3","4"]
