@@ -1,4 +1,4 @@
-import numpy
+import numpy as np
 import random
 import sys
 import networkx as nx
@@ -87,7 +87,7 @@ def activity(iteration):
 
 
 
-#generateNetworks(100)
+generateNetworks(100)
 
 #States
 states = ["1","2","3","4"]
@@ -126,21 +126,7 @@ edge_labels=dict([((u,v,),d['weight'])
 
 
 # parameter to know the number of iterations (1 in order to make it work properly with 1 iteration )
-activity(500)
-
-
-#### Sorting the tab and creating a dataFrame ####
-tabStates = sorted(tabStates, key = lambda i: i['stepCount'],reverse=False)
-
-dfStates = pd.DataFrame(tabStates)
-#print(dfStates)
-
-
-#### Creating a subset to compare the number of steps #####
-subdfStates = dfStates[['count','stepCount']] 
-subdfStates = subdfStates.groupby(['stepCount']).sum()
-subdfStates.plot(kind='bar').get_figure()
-
+#activity(500)
 #generateNetworks(10)
 
 def findBestPath(network):
@@ -194,7 +180,7 @@ def findBestPath(network):
     print(currentPathCost)
     return currentPath
 
-findBestPath(G)
+#findBestPath(G)
 
 #print(transitionMatrix)
 
