@@ -1,4 +1,4 @@
-import numpy as np
+import numpy
 import random
 import sys
 import networkx as nx
@@ -23,35 +23,41 @@ def addToTab(activityList):
         d['count'] = d['count'] + 1
 
 def generateNetworks(numberOfNetworks):
-  sys.stdout=open("out.txt","w")
-  #w to clean the output file
-  print ( )
+  sys.stdout=open("networks.txt","w")
   sys.stdout.close()
   for i in range(0,numberOfNetworks):
-      events = [[]]
-      for x in range(9):
-          newState = []
-          count = 0
-          event = x+1
-          prob=60
-          while count != 4 and event <= 10:
-              if random.randrange(100) < prob or event==x+2:
-                  transition = str(x+1)+str(event)
-                  newState.append(transition)
-                  count += 1
-              event += 1
-              prob -= 5
-          if events == [[]]:
-              events = [newState]
-          else:
-              events.append(newState)
-      sys.stdout=open("out.txt","a")
-      #a to append
-      print (events)
-      sys.stdout.close()
-      #print(events)
-  #The output "events" gives for each iteration (100) the possible paths of a network
-
+    events = [[[]]]
+    for x in range(8):
+        newState = []
+        values = []
+        count = 0
+        event = x+1
+        prob=60
+        while count != 4 and event <= 9:
+            if random.randrange(100) < prob or event==x+2:
+                transition = str(x+1)+str(event)
+                newState.append(transition)
+                count += 1
+            event += 1
+            prob -= 5
+        nbTransitions = len(newState)
+        #We can't use the last while as we need to know the total number of transition to get the same availability on each
+        for p in range(0,nbTransitions):
+            availability = 1/nbTransitions
+            weight = random.randrange(1,10)
+            #weight can't = 0
+            power = str(availability)+","+str(weight)
+            values.append(power)
+        if events == [[[]]]:
+            events = [[newState],[values]]
+        else:
+            events[0].append(newState)
+            events[1].append([values])
+    sys.stdout=open("networks.txt","a")
+    print (events)
+    sys.stdout.close()
+    #print(events)
+#The output "events" gives for each iteration (100) the possible paths of a network
 
 def activity(iteration):
   #Starting state
