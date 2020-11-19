@@ -147,37 +147,39 @@ def findBestPath(network):
     while currentState != finalState:
         shortestArc = ""
         weightNeighor = 0
-        
         print("## CurrentState:"+currentState)
         print("## Going through neigbors:"+str(list(network.neighbors(currentState))))
         print("## Current Path:"+str(currentPath))
         for e in list(network.neighbors(currentState)):
             path2add = list.copy(currentPath)
             weightNeighor = network.get_edge_data(currentState,e)[0]['weight']
-            print("## Path2add is :"+str(path2add))
             if e not in visitedNode:
-                visitedNode.append(e)
                 path2add.append(e)
                 pathsTab.append({
                     "path" : path2add,
                     "weight" : currentPathCost+weightNeighor})
                 print("## Adding :"+str(path2add))
+            if shortestArc == "":
+                shortestArc = e
             else:
-                if shortestArc == "":
+                if weightNeighor < network.get_edge_data(currentState,shortestArc)[0]['weight']:
                     shortestArc = e
-                else:
-                    if weightNeighor < network.get_edge_data(currentState,shortestArc)[0]['weight']:
-                        shortestArc = e
-
-        currentPath.append(shortestArc)
+        print("## shortestArc is:" +  str(shortestArc))
+        
         currentPathCost += network.get_edge_data(currentState,shortestArc)[0]['weight']
-
+        print("## CurrentPathCost is:" +  str(currentPathCost))
+        change = False
         for e in pathsTab:
             if currentPathCost > e['weight']:
                 currentPath = e['path']
                 shortestArc = e['path'][len(e['path'])-1]
+                change = True
+                print("## I CHANGE MY PLANS :"+str(currentState))
+        if change == False:
+            currentPath.append(shortestArc)
+        print("## I Choose :"+str(shortestArc))
         currentState = shortestArc
-        print("## I Choose :"+str(currentState))
+        visitedNode.append(shortestArc)
         print(pathsTab)
     pathsTab.append({
     "path" : currentPath,
@@ -187,10 +189,9 @@ def findBestPath(network):
     print(pathsTab)
     print(currentPathCost)
     return currentPath
-
-#network=getNetwork(0)
+network=getNetwork(0)
 #0 is the first line
-findBestPath(G)
+findBestPath(network)
 
 #print(transitionMatrix)
 
