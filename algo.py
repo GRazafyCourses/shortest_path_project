@@ -59,6 +59,15 @@ def generateNetworks(numberOfNetworks):
     #print(events)
 #The output "events" gives for each iteration (100) the possible paths of a network
 
+
+def getNetwork(netNumber):
+    fp = open("networks.txt")
+    for i, line in enumerate(fp):
+        if i == netNumber:
+            return line
+    fp.close()
+
+
 def activity(iteration):
   #Starting state
     i = 0
@@ -194,6 +203,8 @@ def findBestPath(network):
     print(currentPathCost)
     return currentPath
 
+#network=getNetwork(0)
+#0 is the first line
 findBestPath(G)
 
 #print(transitionMatrix)
