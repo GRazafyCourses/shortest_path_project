@@ -59,13 +59,12 @@ def generateNetworks(numberOfNetworks):
     #print(events)
 #The output "events" gives for each iteration (100) the possible paths of a network
 
-
 def getNetwork(netNumber):
     fp = open("networks.txt")
     for i, line in enumerate(fp):
         if i == netNumber:
+            fp.close()
             return line
-    fp.close()
 
 
 def activity(iteration):
