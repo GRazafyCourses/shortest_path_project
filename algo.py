@@ -56,8 +56,7 @@ def generateNetworks(numberOfNetworks):
     sys.stdout=open("networks.txt","a")
     print (events)
     sys.stdout.close()
-    #print(events)
-#The output "events" gives for each iteration (100) the possible paths of a network
+#The generateNetwork function writes on a file all the generated networks, with their probability and weight (for easier use of each network)
 
 def getNetwork(netNumber):
     fp = open("networks.txt")
