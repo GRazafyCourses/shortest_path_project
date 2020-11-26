@@ -9,6 +9,14 @@ import pandas as pd
 
 tabStates = []
 
+def setNetwork(network):
+    G = nx.MultiDiGraph()
+    LocaltransitionMatrix = network[1]
+    Localevents = network[0]
+    for i in range(0,len(Localevents)):
+        for e in range(0,len(Localevents[i])):
+            G.add_edges_from([tuple(list(Localevents[i][e]))],weight=LocaltransitionMatrix[i][e][1],label=LocaltransitionMatrix[i][e])
+    return G
 
 def addToTab(activityList):
   if not any(d.get('Path') == str(activityList) for d in tabStates):
@@ -23,8 +31,7 @@ def addToTab(activityList):
         d['count'] = d['count'] + 1
 
 def generateNetworks(numberOfNetworks):
-  sys.stdout=open("networks.txt","w")
-  sys.stdout.close()
+  tabNetworks = []
   for i in range(0,numberOfNetworks):
     events = [[[]]]
     for x in range(8):
@@ -52,20 +59,11 @@ def generateNetworks(numberOfNetworks):
             events = [[newState],[values]]
         else:
             events[0].append(newState)
-            events[1].append([values])
-    sys.stdout=open("networks.txt","a")
-    print (events)
-    sys.stdout.close()
+            events[1].append(values)
+    tabNetworks.append(events)
+  return tabNetworks
     #print(events)
 #The output "events" gives for each iteration (100) the possible paths of a network
-
-def getNetwork(netNumber):
-    fp = open("networks.txt")
-    for i, line in enumerate(fp):
-        if i == netNumber:
-            fp.close()
-            return line
-
 
 def activity(iteration):
   #Starting state
@@ -95,7 +93,7 @@ def activity(iteration):
 
 
 
-generateNetworks(100)
+#generateNetworks(100)
 
 #States
 states = ["1","2","3","4"]
@@ -131,11 +129,6 @@ for i in range(0,len(events)):
 edge_labels=dict([((u,v,),d['weight'])
                  for u,v,d in G.edges(data=True)])
 
-
-
-# parameter to know the number of iterations (1 in order to make it work properly with 1 iteration )
-#activity(500)
-#generateNetworks(10)
 
 def findBestPath(network):
     pathsTab = []
@@ -189,18 +182,10 @@ def findBestPath(network):
     print(pathsTab)
     print(currentPathCost)
     return currentPath
-network=getNetwork(0)
-#0 is the first line
-findBestPath(network)
 
-#print(transitionMatrix)
-
-#print the Graph
-#pos=nx.spring_layout(G)
-#write_dot(G,'graph.dot')
-#nx.draw_networkx_edge_labels(G,pos,edge_labels=edge_labels,)
-#nx.draw(G,pos)
-#plt.show()
+tabNetwoks = generateNetworks(10)
+network  = tabNetwoks[0]
+mygraph = setNetwork(network)
 
 
 ## TO DO : 
