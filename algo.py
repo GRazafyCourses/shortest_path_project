@@ -4,17 +4,24 @@ import sys
 import networkx as nx
 from networkx.drawing.nx_agraph import write_dot
 import matplotlib.pyplot as plt
+import matplotlib.animation
 import pandas as pd
+import seaborn.apionly as sns
 
+fig, ax = plt.subplots(figsize=(6,4))
 
 def setNetwork(network):
-    G = nx.MultiDiGraph()
+    localGraph = nx.MultiDiGraph()
     LocaltransitionMatrix = network[1]
     Localevents = network[0]
     for i in range(0,len(Localevents)):
         for e in range(0,len(Localevents[i])):
-            G.add_edges_from([tuple(list(Localevents[i][e]))],weight=LocaltransitionMatrix[i][e][1],label=LocaltransitionMatrix[i][e])
-    return G
+            listValue = list(LocaltransitionMatrix[i][e].split(","))
+            listValue = list(map(float, listValue))
+            print(listValue)
+            localGraph.add_edges_from([tuple(list(Localevents[i][e]))],weight=listValue[1],label=listValue)
+    
+    return localGraph
 
 def addToTab(activityList):
   tabStates = []
@@ -39,7 +46,8 @@ def generateNetworks(numberOfNetworks):
         count = 0
         event = x+1
         prob=60
-        while count != 2 and event <= 9: # 2 to change by 4, the 2 in the for is to be switched to 8 (9 states)
+        #count != 2 and
+        while event <= numberStates: # 2 to change by 4, the 2 in the for is to be switched to 8 (9 states)
             if random.randrange(100) < prob or event==x+2:
                 transition = str(x+1)+str(event)
                 newState.append(transition)
@@ -126,11 +134,44 @@ for i in range(0,len(events)):
 #if sum(transitionMatrix[0])+sum(transitionMatrix[1])+sum(transitionMatrix[1]) != 3:
 #  sys.exit("Transition matrix doesn't have the awaited total")
 
-
+numberStates = 2 #Total number of states
+stable = 2
+unstable = 6
+tabNetworks = generateNetworks(2)
+network  = tabNetworks[0]
+mygraph = setNetwork(network)
+pos = nx.spring_layout(mygraph)
 #adding labels on edges
 edge_labels=dict([((u,v,),d['weight'])
                  for u,v,d in G.edges(data=True)])
+idx_colors = sns.cubehelix_palette(5, start=.5, rot=-.75)[::-1]
+idx_weights = [3,2,1]
+sequence_of_letters = "".join(['2', '3', '4'])
 
+def update(num):
+    ax.clear()
+    i = num // 3
+    j = num % 3 + 1
+
+    triad = sequence_of_letters[i:i+3]
+    path = ["1"] + ["".join(sorted(set(triad[:k + 1]))) for k in range(j)]
+
+    # Background nodes
+    nx.draw_networkx_edges(mygraph, pos=pos, ax=ax, edge_color="gray")
+    null_nodes = nx.draw_networkx_nodes(mygraph, pos=pos, nodelist=set(mygraph.nodes()) - set(path), node_color="white",  ax=ax)
+    null_nodes.set_edgecolor("black")
+
+    # Query nodes
+    query_nodes = nx.draw_networkx_nodes(mygraph, pos=pos, nodelist=path, node_color=idx_colors[:len(path)], ax=ax)
+    query_nodes.set_edgecolor("white")
+    nx.draw_networkx_labels(mygraph, pos=pos, labels=dict(zip(path,path)),  font_color="white", ax=ax)
+    edgelist = [path[k:k+2] for k in range(len(path) - 1)]
+    nx.draw_networkx_edges(mygraph, pos=pos, edgelist=edgelist, width=idx_weights[:len(path)], ax=ax)
+
+    # Scale plot ax
+    ax.set_title("Frame %d:    "%(num+1) +  " - ".join(path), fontweight="bold")
+    ax.set_xticks([])
+    ax.set_yticks([])
 
 def findBestPath(network):
     pathsTab = []
@@ -185,11 +226,7 @@ def findBestPath(network):
     print(currentPathCost)
     return currentPath
 
-numberStates = 2 #Total number of states
-stable = 2
-unstable = 6
-tabNetwoks = generateNetworks(2)
-network  = tabNetwoks[0]
-mygraph = setNetwork(network)
-activity(network)
-print(tabNetwoks)
+
+
+ani = matplotlib.animation.FuncAnimation(fig, update, frames=6, interval=1000, repeat=True)
+plt.show()
