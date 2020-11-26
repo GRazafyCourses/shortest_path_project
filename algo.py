@@ -39,7 +39,7 @@ def generateNetworks(numberOfNetworks):
         count = 0
         event = x+1
         prob=60
-        while count != 2 and event <= 9: # 2 to change by 4, the 2 in the for is to be switched to 8 (9 states)
+        while count != 2 and event <= numberStates: # 2 to change by 4, the 2 in the for is to be switched to 8 (9 states)
             if random.randrange(100) < prob or event==x+2:
                 transition = str(x+1)+str(event)
                 newState.append(transition)
@@ -50,9 +50,11 @@ def generateNetworks(numberOfNetworks):
         #We can't use the last while as we need to know the total number of transition to get the same availability on each
         for p in range(0,nbTransitions):
             availability = 1/nbTransitions
-            weight = random.randrange(1,10)
+            weight = random.randrange(1,9)
             #weight can't = 0
-            if random.randrange(1,10) > 7:
+            if p == 0:
+              power = str(availability)+",9"+","+str(stable)
+            elif random.randrange(1,10) > 7:
               power = str(availability)+","+str(weight)+","+str(unstable)
             else:
               power = str(availability)+","+str(weight)+","+str(stable)
@@ -67,35 +69,26 @@ def generateNetworks(numberOfNetworks):
     #print(events)
 #The output "events" gives for each iteration (100) the possible paths of a network
 
-def activity(network):
-  #Starting state
-    i = 0
-    while i != iteration:
-      y = 0
+def activity(network): # add a parameter iteration to access choose i times (uncomment i and while)
+    # i = 0
+    # while i != iteration:
       firstState ="1"
       activityList = [firstState]
-      i += 1 
-      while firstState != str(numberStates):
-        pas = 0
-        you = 1
-        change = np.random.choice(events[y],replace=True,p=transitionMatrix[y])
-        while pas != 1:
-          if change == events[y][0]:
-            activityList.append(events[y][0][-1])
-            change = np.random.choice(events[y],replace=True,p=transitionMatrix[y])
-          elif change == events[y][you]:
-            newState = events[y][you][-1]
-            firstState = newState
-            activityList.append(newState)
-            pas = 1
-          else:
-            you += 1
-        y += 1
-      addToTab(activityList)
-
-
-
-#generateNetworks(100)
+      # i += 1 
+      while int(firstState) != numberStates:
+        desiredState = 0
+        choice = 1000 # huge number to access the first if below, changed afterwards
+        #Search for every possibility
+        possibleStates = len(network[0][int(firstState)-1])
+        for e in range(possibleStates):
+          weight = int(network[1][int(firstState)-1][e][-3])
+          if choice > weight:
+            choice = weight
+            desiredState = network[0][int(firstState)-1][e][-1]
+          
+          firstState = desiredState
+        activityList.append(desiredState)
+      print(activityList)
 
 #States
 states = ["1","2","3","4"]
@@ -185,11 +178,11 @@ def findBestPath(network):
     print(currentPathCost)
     return currentPath
 
-numberStates = 2 #Total number of states
+numberStates = 4 #Total number of states
 stable = 2
 unstable = 6
 tabNetwoks = generateNetworks(2)
 network  = tabNetwoks[0]
 mygraph = setNetwork(network)
 activity(network)
-print(tabNetwoks)
+print(network)
