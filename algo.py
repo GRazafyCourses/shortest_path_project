@@ -1,4 +1,4 @@
-import numpy as np
+import numpy as np  
 import random
 import sys
 import networkx as nx
@@ -7,10 +7,17 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 
-tabStates = []
-
+def setNetwork(network):
+    G = nx.MultiDiGraph()
+    LocaltransitionMatrix = network[1]
+    Localevents = network[0]
+    for i in range(0,len(Localevents)):
+        for e in range(0,len(Localevents[i])):
+            G.add_edges_from([tuple(list(Localevents[i][e]))],weight=LocaltransitionMatrix[i][e][1],label=LocaltransitionMatrix[i][e])
+    return G
 
 def addToTab(activityList):
+  tabStates = []
   if not any(d.get('Path') == str(activityList) for d in tabStates):
     tabStates.append({
       "Path" : str(activityList),
@@ -23,17 +30,16 @@ def addToTab(activityList):
         d['count'] = d['count'] + 1
 
 def generateNetworks(numberOfNetworks):
-  sys.stdout=open("networks.txt","w")
-  sys.stdout.close()
+  tabNetworks = []
   for i in range(0,numberOfNetworks):
     events = [[[]]]
-    for x in range(8):
+    for x in range(numberStates):
         newState = []
         values = []
         count = 0
         event = x+1
         prob=60
-        while count != 4 and event <= 9:
+        while count != 2 and event <= 9: # 2 to change by 4, the 2 in the for is to be switched to 8 (9 states)
             if random.randrange(100) < prob or event==x+2:
                 transition = str(x+1)+str(event)
                 newState.append(transition)
@@ -46,27 +52,22 @@ def generateNetworks(numberOfNetworks):
             availability = 1/nbTransitions
             weight = random.randrange(1,10)
             #weight can't = 0
-            power = str(availability)+","+str(weight)
+            if random.randrange(1,10) > 7:
+              power = str(availability)+","+str(weight)+","+str(unstable)
+            else:
+              power = str(availability)+","+str(weight)+","+str(stable)
             values.append(power)
         if events == [[[]]]:
             events = [[newState],[values]]
         else:
             events[0].append(newState)
-            events[1].append([values])
-    sys.stdout=open("networks.txt","a")
-    print (events)
-    sys.stdout.close()
-#The generateNetwork function writes on a file all the generated networks, with their probability and weight (for easier use of each network)
+            events[1].append(values)
+    tabNetworks.append(events)
+  return tabNetworks
+    #print(events)
+#The output "events" gives for each iteration (100) the possible paths of a network
 
-def getNetwork(netNumber):
-    fp = open("networks.txt")
-    for i, line in enumerate(fp):
-        if i == netNumber:
-            fp.close()
-            return line
-
-
-def activity(iteration):
+def activity(network):
   #Starting state
     i = 0
     while i != iteration:
@@ -94,11 +95,11 @@ def activity(iteration):
 
 
 
-generateNetworks(100)
+#generateNetworks(100)
 
 #States
 states = ["1","2","3","4"]
-numberStates = len(states)
+
 
 #Sequence of events
 events = [["11","12","13"],["22","23","24"],["33","34"]]
@@ -131,11 +132,6 @@ edge_labels=dict([((u,v,),d['weight'])
                  for u,v,d in G.edges(data=True)])
 
 
-
-# parameter to know the number of iterations (1 in order to make it work properly with 1 iteration )
-#activity(500)
-#generateNetworks(10)
-
 def findBestPath(network):
     pathsTab = []
     visitedNode = ["1"]
@@ -146,37 +142,39 @@ def findBestPath(network):
     while currentState != finalState:
         shortestArc = ""
         weightNeighor = 0
-        
         print("## CurrentState:"+currentState)
         print("## Going through neigbors:"+str(list(network.neighbors(currentState))))
         print("## Current Path:"+str(currentPath))
         for e in list(network.neighbors(currentState)):
             path2add = list.copy(currentPath)
             weightNeighor = network.get_edge_data(currentState,e)[0]['weight']
-            print("## Path2add is :"+str(path2add))
             if e not in visitedNode:
-                visitedNode.append(e)
                 path2add.append(e)
                 pathsTab.append({
                     "path" : path2add,
                     "weight" : currentPathCost+weightNeighor})
                 print("## Adding :"+str(path2add))
+            if shortestArc == "":
+                shortestArc = e
             else:
-                if shortestArc == "":
+                if weightNeighor < network.get_edge_data(currentState,shortestArc)[0]['weight']:
                     shortestArc = e
-                else:
-                    if weightNeighor < network.get_edge_data(currentState,shortestArc)[0]['weight']:
-                        shortestArc = e
-
-        currentPath.append(shortestArc)
+        print("## shortestArc is:" +  str(shortestArc))
+        
         currentPathCost += network.get_edge_data(currentState,shortestArc)[0]['weight']
-
+        print("## CurrentPathCost is:" +  str(currentPathCost))
+        change = False
         for e in pathsTab:
             if currentPathCost > e['weight']:
                 currentPath = e['path']
                 shortestArc = e['path'][len(e['path'])-1]
+                change = True
+                print("## I CHANGE MY PLANS :"+str(currentState))
+        if change == False:
+            currentPath.append(shortestArc)
+        print("## I Choose :"+str(shortestArc))
         currentState = shortestArc
-        print("## I Choose :"+str(currentState))
+        visitedNode.append(shortestArc)
         print(pathsTab)
     pathsTab.append({
     "path" : currentPath,
@@ -187,25 +185,11 @@ def findBestPath(network):
     print(currentPathCost)
     return currentPath
 
-#network=getNetwork(0)
-#0 is the first line
-findBestPath(G)
-
-#print(transitionMatrix)
-
-#print the Graph
-#pos=nx.spring_layout(G)
-#write_dot(G,'graph.dot')
-#nx.draw_networkx_edge_labels(G,pos,edge_labels=edge_labels,)
-#nx.draw(G,pos)
-#plt.show()
-
-
-## TO DO : 
-#- **Implement a Function to change the probability of throughput**
-#- **Implement a Function to choose a path naively**
-#- **Implement the Function to optimize the path choosing**
-#- **Implement control Function**
-#- **generate 100 scenario**
-#- **Test first routing rule 100 times**
-#
+numberStates = 2 #Total number of states
+stable = 2
+unstable = 6
+tabNetwoks = generateNetworks(2)
+network  = tabNetwoks[0]
+mygraph = setNetwork(network)
+activity(network)
+print(tabNetwoks)
