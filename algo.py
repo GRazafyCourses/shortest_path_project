@@ -17,8 +17,7 @@ def setNetwork(network):
     for i in range(0,len(Localevents)):
         for e in range(0,len(Localevents[i])):
             listValue = list(LocaltransitionMatrix[i][e].split(","))
-            listValue = list(map(float, listValue))
-            print(listValue)
+            listValue = list(map(float, listValue))            
             localGraph.add_edges_from([tuple(list(Localevents[i][e]))],weight=listValue[1],label=listValue)
     
     return localGraph
@@ -36,11 +35,29 @@ def addToTab(activityList):
       if(d.get('Path') == str(activityList)):
         d['count'] = d['count'] + 1
 
+def changeWeight(network,networkList):
+  LocaltransitionMatrix = networkList[1]
+  Localevents = networkList[0]
+  for i in range(0,len(Localevents)):
+    for e in range(0,len(Localevents[i])):
+      listValue = list(LocaltransitionMatrix[i][e].split(","))
+      listValue = list(map(float, listValue))
+      for u,v,d in network.edges(data=True):
+        print("listValue[1]: " +str(listValue[1]))
+        print("[listValue[1]-listValue[2]: " +str(listValue[1]-listValue[2]))
+        print("[listValue[1]+listValue[2]: " +str(listValue[1]+listValue[2]))
+        newWeight = random.choice([listValue[1]-listValue[2],listValue[1]+listValue[2],listValue[1]])
+        if newWeight <= 0.0:
+          newWeight = 1.0
+        print("newWeight: " +str(newWeight))
+        d['weight'] = newWeight
+  return network
+
 def generateNetworks(numberOfNetworks):
   tabNetworks = []
   for i in range(0,numberOfNetworks):
     events = [[[]]]
-    for x in range(numberStates):
+    for x in range(numberStates-1):
         newState = []
         values = []
         count = 0
@@ -58,9 +75,11 @@ def generateNetworks(numberOfNetworks):
         #We can't use the last while as we need to know the total number of transition to get the same availability on each
         for p in range(0,nbTransitions):
             availability = 1/nbTransitions
-            weight = random.randrange(1,10)
+            weight = random.randrange(1,9)
             #weight can't = 0
-            if random.randrange(1,10) > 7:
+            if p == 0:
+              power = str(availability)+",9"+","+str(stable)
+            elif random.randrange(1,10) > 7:
               power = str(availability)+","+str(weight)+","+str(unstable)
             else:
               power = str(availability)+","+str(weight)+","+str(stable)
@@ -75,35 +94,28 @@ def generateNetworks(numberOfNetworks):
     #print(events)
 #The output "events" gives for each iteration (100) the possible paths of a network
 
-def activity(network):
-  #Starting state
-    i = 0
-    while i != iteration:
-      y = 0
+def activity(network,i): # add a parameter iteration to access choose i times (uncomment i and while)
+    # i = 0
+    # while i != iteration:
+      print("RAW NETWORK" + str(network.edges.data()))
       firstState ="1"
       activityList = [firstState]
-      i += 1 
-      while firstState != str(numberStates):
-        pas = 0
-        you = 1
-        change = np.random.choice(events[y],replace=True,p=transitionMatrix[y])
-        while pas != 1:
-          if change == events[y][0]:
-            activityList.append(events[y][0][-1])
-            change = np.random.choice(events[y],replace=True,p=transitionMatrix[y])
-          elif change == events[y][you]:
-            newState = events[y][you][-1]
-            firstState = newState
-            activityList.append(newState)
-            pas = 1
-          else:
-            you += 1
-        y += 1
-      addToTab(activityList)
-
-
-
-#generateNetworks(100)
+      # i += 1 
+      while int(firstState) != numberStates:
+        desiredState = 0
+        choice = 1000.0 # huge number to access the first if below, changed afterwards
+        #Search for every possibility
+        for e in list(network.neighbors(firstState)):
+          weight = network.get_edge_data(firstState,e)[0]['weight']
+          if choice > weight:
+            choice = weight
+            desiredState = e
+          
+        firstState = desiredState
+        activityList.append(desiredState)
+        network = changeWeight(network,i)
+        print(network.edges.data())
+      print(activityList)
 
 #States
 states = ["1","2","3","4"]
@@ -131,16 +143,14 @@ for i in range(0,len(events)):
     G.add_edges_from([tuple(list(events[i][e]))],weight=transitionMatrix[i][e][1],label=transitionMatrix[i][e])
 
 
-#if sum(transitionMatrix[0])+sum(transitionMatrix[1])+sum(transitionMatrix[1]) != 3:
-#  sys.exit("Transition matrix doesn't have the awaited total")
-
-numberStates = 2 #Total number of states
+numberStates = 4 #Total number of states
 stable = 2
 unstable = 6
-tabNetworks = generateNetworks(2)
-network  = tabNetworks[0]
-mygraph = setNetwork(network)
-pos = nx.spring_layout(mygraph)
+#tabNetworks = generateNetworks(2)
+#network  = tabNetworks[0]
+#print(network)
+#mygraph = setNetwork(network)
+#pos = nx.spring_layout(mygraph)
 #adding labels on edges
 edge_labels=dict([((u,v,),d['weight'])
                  for u,v,d in G.edges(data=True)])
@@ -228,5 +238,11 @@ def findBestPath(network):
 
 
 
-ani = matplotlib.animation.FuncAnimation(fig, update, frames=6, interval=1000, repeat=True)
-plt.show()
+#ani = matplotlib.animation.FuncAnimation(fig, update, frames=6, interval=1000, repeat=True)
+#plt.show()
+count = 0
+for i in generateNetworks(1):
+  count+= 1
+  mygraph = setNetwork(i)
+  activity(mygraph,i)
+  print(count)
