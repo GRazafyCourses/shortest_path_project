@@ -40,16 +40,15 @@ def changeWeight(network,networkList):
   Localevents = networkList[0]
   for i in range(0,len(Localevents)):
     for e in range(0,len(Localevents[i])):
-      listValue = list(LocaltransitionMatrix[i][e].split(","))
-      listValue = list(map(float, listValue))
       for u,v,d in network.edges(data=True):
-        print("listValue[1]: " +str(listValue[1]))
-        print("[listValue[1]-listValue[2]: " +str(listValue[1]-listValue[2]))
-        print("[listValue[1]+listValue[2]: " +str(listValue[1]+listValue[2]))
-        newWeight = random.choice([listValue[1]-listValue[2],listValue[1]+listValue[2],listValue[1]])
+        #print("listValue[1]: " +str(d['label'][1]))
+        #print("[listValue[1]-listValue[2]: " +str(d['label'][1]-d['label'][2]))
+        #print("[listValue[1]+listValue[2]: " +str(d['label'][1]+d['label'][2]))
+        newWeight = random.choice([d['label'][1]-d['label'][2],d['label'][1]+d['label'][2],d['label'][1]])
         if newWeight <= 0.0:
           newWeight = 1.0
-        print("newWeight: " +str(newWeight))
+        #print(d)
+        #print("newWeight: " +str(newWeight))
         d['weight'] = newWeight
   return network
 
