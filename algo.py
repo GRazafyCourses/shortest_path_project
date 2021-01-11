@@ -6,7 +6,8 @@ from networkx.drawing.nx_agraph import write_dot
 import matplotlib.pyplot as plt
 import matplotlib.animation
 import pandas as pd
-import seaborn.apionly as sns
+from ast import literal_eval
+from CustomException import NotEnoughPathsException
 
 fig, ax = plt.subplots(figsize=(6,4))
 
@@ -16,10 +17,9 @@ def setNetwork(network):
     Localevents = network[0]
     for i in range(0,len(Localevents)):
         for e in range(0,len(Localevents[i])):
-            listValue = list(LocaltransitionMatrix[i][e].split(","))
-            listValue = list(map(float, listValue))            
-            localGraph.add_edges_from([tuple(list(Localevents[i][e]))],weight=listValue[1],label=listValue)
-    
+          listValue = list(LocaltransitionMatrix[i][e].split(","))
+          listValue = list(map(float, listValue))            
+          localGraph.add_edges_from([tuple(list(Localevents[i][e]))],weight=listValue[1],label=listValue)
     return localGraph
 
 def addToTab(activityList):
@@ -41,14 +41,9 @@ def changeWeight(network,networkList):
   for i in range(0,len(Localevents)):
     for e in range(0,len(Localevents[i])):
       for u,v,d in network.edges(data=True):
-        #print("listValue[1]: " +str(d['label'][1]))
-        #print("[listValue[1]-listValue[2]: " +str(d['label'][1]-d['label'][2]))
-        #print("[listValue[1]+listValue[2]: " +str(d['label'][1]+d['label'][2]))
         newWeight = random.choice([d['label'][1]-d['label'][2],d['label'][1]+d['label'][2],d['label'][1]])
         if newWeight <= 0.0:
           newWeight = 1.0
-        #print(d)
-        #print("newWeight: " +str(newWeight))
         d['weight'] = newWeight
   return network
 
@@ -142,9 +137,9 @@ for i in range(0,len(events)):
     G.add_edges_from([tuple(list(events[i][e]))],weight=transitionMatrix[i][e][1],label=transitionMatrix[i][e])
 
 
-numberStates = 4 #Total number of states
-stable = 2
-unstable = 6
+numberStates = 9 #Total number of states
+stable = 1
+unstable = 2
 #tabNetworks = generateNetworks(2)
 #network  = tabNetworks[0]
 #print(network)
@@ -153,9 +148,6 @@ unstable = 6
 #adding labels on edges
 edge_labels=dict([((u,v,),d['weight'])
                  for u,v,d in G.edges(data=True)])
-idx_colors = sns.cubehelix_palette(5, start=.5, rot=-.75)[::-1]
-idx_weights = [3,2,1]
-sequence_of_letters = "".join(['2', '3', '4'])
 
 def update(num):
     ax.clear()
@@ -181,6 +173,28 @@ def update(num):
     ax.set_title("Frame %d:    "%(num+1) +  " - ".join(path), fontweight="bold")
     ax.set_xticks([])
     ax.set_yticks([])
+
+def fitness(path,graph):
+  total_cost = sum([graph[path[i]][path[i+1]][0]['weight'] for i in range(len(path)-1)])
+  number_hops = len(path)
+
+  return number_hops*10+total_cost
+  
+def select_best_path(tab_paths,graph,number_paths,selected_paths_cross):
+  fitness_paths_tab = []
+
+  if (len(tab_paths)<number_paths):
+    raise NotEnoughPathsException("the number of paths is inferior to the size of initial population")
+
+  for path in tab_paths:
+    fitness_paths_tab.append({
+                    "path" : path,
+                    "weight" : fitness(literal_eval(path),graph)})
+  
+  fitness_paths_tab = sorted(fitness_paths_tab,key = lambda i: i['weight'])
+
+  for i in range(0,number_paths):
+    selected_paths_cross.append(fitness_paths_tab[i]) 
 
 def findBestPath(network):
     pathsTab = []
@@ -235,13 +249,44 @@ def findBestPath(network):
     print(currentPathCost)
     return currentPath
 
-
+'''A recursive function to print all paths from 'u' to 'd'. 
+visited[] keeps track of vertices in current path. 
+path[] stores actual vertices and path_index is current index in path[]'''
+def allPathsUtil(network, u, d, visited, path,AllPaths): 
+  # Mark the current node as visited and store in path 
+  visited[int(u)]= True
+  path.append(u) 
+  # If current vertex is same as destination, then print 
+  # current path[] 
+  if u == d:
+    AllPaths.append(str(path)) 
+    print(path)
+  else: 
+    # If current vertex is not destination 
+    # Recur for all the vertices adjacent to this vertex 
+    for i in network.neighbors(u): 
+      if visited[int(i)]== False: 
+        allPathsUtil(network,str(i), d, visited, path,AllPaths)               
+    # Remove current vertex from path[] and mark it as unvisited 
+  path.pop() 
+  visited[int(u)]= False
 
 #ani = matplotlib.animation.FuncAnimation(fig, update, frames=6, interval=1000, repeat=True)
 #plt.show()
 count = 0
-for i in generateNetworks(1):
-  count+= 1
-  mygraph = setNetwork(i)
-  activity(mygraph,i)
-  print(count)
+tabNetwork = generateNetworks(10)
+mygraph = setNetwork(tabNetwork[0])
+#print(mygraph.edges)
+#print(mygraph.nodes)
+
+visited = [0]*(numberStates+1)
+path = []
+AllPaths = []
+selected_paths_cross = []
+
+allPathsUtil(mygraph,"1","9",visited,path,AllPaths)
+select_best_path(AllPaths,mygraph,5,selected_paths_cross)
+
+print(selected_paths_cross)
+
+
