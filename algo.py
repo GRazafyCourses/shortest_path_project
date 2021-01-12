@@ -203,7 +203,7 @@ def select_best_path(tab_paths,graph,number_paths,selected_paths_cross):
 
   for path in tab_paths:
     fitness_paths_tab.append({
-                    "path" : path,
+                    "path" : literal_eval(path),
                     "fitness" : fitness(literal_eval(path),graph)})
 
   #Normalization 
@@ -212,11 +212,15 @@ def select_best_path(tab_paths,graph,number_paths,selected_paths_cross):
   for i in range(0,number_paths):
     #roulette selection
     selected_path = random.choices(fitness_paths_tab, [d['fitness'] for d in fitness_paths_tab], k=1)
-    print("#### Selection of Paths :")
-    print("selected_path: "+ str(selected_path))
-    # deleted the selected path so it won't be selected again
-    fitness_paths_tab = [i for i in fitness_paths_tab if not (i['path'] == selected_path)] 
-    selected_paths_cross.append(selected_path[0]['path']) 
+    if selected_path[0]['path'] in selected_paths_cross:
+      i -= 1
+      print("same path detected")
+    else:
+      print("#### Selection of Paths :")
+      print("selected_path: "+ str(selected_path))
+      # deleted the selected path so it won't be selected again
+      fitness_paths_tab = [i for i in fitness_paths_tab if not (i['path'] == selected_path)] 
+      selected_paths_cross.append(selected_path[0]['path']) 
 
 def findBestPath(network):
     pathsTab = []
@@ -271,9 +275,57 @@ def findBestPath(network):
     print(currentPathCost)
     return currentPath
 
-def crossover(selected_population):
-  #TODO
-  allo = 0
+
+def intersection(lst1, lst2): 
+    lst3 = [value for value in lst1 if value in lst2] 
+    return lst3
+
+def cross(indivA,indivB):
+  listIntersect = intersection(indivA,indivB)
+  new_indivA = np.append(indivA[:int(listIntersect[1])],indivB[int(listIntersect[1]):])
+  new_indivB = np.append(indivB[:int(listIntersect[1])],indivA[int(listIntersect[1]):])
+  return [list(new_indivA),list(new_indivB)]
+
+def accepts(g, path):
+    return all(map(g.has_edge, path, path[1:]))
+
+def crossover(selected_population,graph):
+  newGeneration = []
+  sortList = []
+
+  for individual in range(0,len(selected_population)):
+      for i in range(individual+1,len(selected_population)):
+        #test if the intersection is possible
+        if intersection(selected_population[individual],selected_population[i]):
+          #generation of new individual and adding them to the previous population
+          for e in cross(selected_population[individual],selected_population[i]):
+            if e not in newGeneration:
+              newGeneration.append(e)
+  print(newGeneration)
+
+  for newInd in newGeneration:
+    if accepts(graph,newInd):
+      sortList.append({
+        "path" : newInd,
+        "fitness" : fitness(newInd,graph)})
+      print(str(newInd)+" Is Valid")
+    else:
+      print(str(newInd)+" Is not Valid")
+
+        
+  
+  for oldInd in selected_population:
+    if not any(d.get('path') == oldInd for d in sortList):
+      sortList.append({
+        "path" : oldInd,
+        "fitness" : fitness(oldInd,graph)})
+
+  print(sortList)
+
+  sortList = sorted(sortList,key = lambda i: i['fitness'])
+
+  print(sortList)
+
 
 '''A recursive function to print all paths from 'u' to 'd'. 
 visited[] keeps track of vertices in current path. 
@@ -304,14 +356,20 @@ mygraph = setNetwork(tabNetwork[0])
 #print(mygraph.edges)
 #print(mygraph.nodes)
 
+
+
 visited = [0]*(numberStates+1)
 path = []
 AllPaths = []
 selected_paths_cross = []
 
-allPathsUtil(mygraph,"1","9",visited,path,AllPaths)
-select_best_path(AllPaths,mygraph,10,selected_paths_cross)
+pos=nx.spring_layout(mygraph)
+nx.draw(mygraph,pos)
 
-print(selected_paths_cross)
+
+allPathsUtil(mygraph,"1","9",visited,path,AllPaths)
+select_best_path(AllPaths,mygraph,5,selected_paths_cross)
+crossover(selected_paths_cross,mygraph)
+plt.show()
 
 
