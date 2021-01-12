@@ -179,22 +179,44 @@ def fitness(path,graph):
   number_hops = len(path)
 
   return number_hops*10+total_cost
-  
+
+def normalize_fitness(fitness_paths_tab):
+  fitness_sum = 0
+  fitness_sum_final = 0
+  for e in fitness_paths_tab:
+    fitness_sum += 1/e["fitness"]
+  for e in fitness_paths_tab:
+    # (1/fitness)/(1/sumOfFitness) to use the roulette wheel selection in a minimization problem
+    e["fitness"] =(1/e["fitness"])/fitness_sum
+  for e in fitness_paths_tab:
+    fitness_sum_final += e["fitness"]
+  #verification that the normalization worked
+  print("fitness_sum_final = "+str(fitness_sum_final))
+
+
 def select_best_path(tab_paths,graph,number_paths,selected_paths_cross):
   fitness_paths_tab = []
 
   if (len(tab_paths)<number_paths):
     raise NotEnoughPathsException("the number of paths is inferior to the size of initial population")
 
+
   for path in tab_paths:
     fitness_paths_tab.append({
                     "path" : path,
-                    "weight" : fitness(literal_eval(path),graph)})
-  
-  fitness_paths_tab = sorted(fitness_paths_tab,key = lambda i: i['weight'])
+                    "fitness" : fitness(literal_eval(path),graph)})
+
+  #Normalization 
+  normalize_fitness(fitness_paths_tab)
 
   for i in range(0,number_paths):
-    selected_paths_cross.append(fitness_paths_tab[i]) 
+    #roulette selection
+    selected_path = random.choices(fitness_paths_tab, [d['fitness'] for d in fitness_paths_tab], k=1)
+    print("#### Selection of Paths :")
+    print("selected_path: "+ str(selected_path))
+    # deleted the selected path so it won't be selected again
+    fitness_paths_tab = [i for i in fitness_paths_tab if not (i['path'] == selected_path)] 
+    selected_paths_cross.append(selected_path[0]['path']) 
 
 def findBestPath(network):
     pathsTab = []
@@ -249,6 +271,10 @@ def findBestPath(network):
     print(currentPathCost)
     return currentPath
 
+def crossover(selected_population):
+  #TODO
+  allo = 0
+
 '''A recursive function to print all paths from 'u' to 'd'. 
 visited[] keeps track of vertices in current path. 
 path[] stores actual vertices and path_index is current index in path[]'''
@@ -260,7 +286,6 @@ def allPathsUtil(network, u, d, visited, path,AllPaths):
   # current path[] 
   if u == d:
     AllPaths.append(str(path)) 
-    print(path)
   else: 
     # If current vertex is not destination 
     # Recur for all the vertices adjacent to this vertex 
@@ -285,7 +310,7 @@ AllPaths = []
 selected_paths_cross = []
 
 allPathsUtil(mygraph,"1","9",visited,path,AllPaths)
-select_best_path(AllPaths,mygraph,5,selected_paths_cross)
+select_best_path(AllPaths,mygraph,10,selected_paths_cross)
 
 print(selected_paths_cross)
 
