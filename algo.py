@@ -426,7 +426,7 @@ def main(numberGraph,mutationRate,paramNumberStates,numberIterationCrossover):
       localRes.append(maxFitness(resTabGA))
     resNumberGA.append(localRes)
 
-main(10,0.5,25,20)
+main(10,0.5,20,100)
 print(resNumberGA)
 plt.xlabel("X-axis")
 plt.ylabel("Y-axis")
