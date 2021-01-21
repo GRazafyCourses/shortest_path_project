@@ -11,6 +11,10 @@ from CustomException import NotEnoughPathsException
 
 fig, ax = plt.subplots(figsize=(6,4))
 
+stable = 1
+unstable = 2
+
+
 def setNetwork(network):
     localGraph = nx.MultiDiGraph()
     LocaltransitionMatrix = network[1]
@@ -47,7 +51,7 @@ def changeWeight(network,networkList):
         d['weight'] = newWeight
   return network
 
-def generateNetworks(numberOfNetworks):
+def generateNetworks(numberOfNetworks,numberStates):
   tabNetworks = []
   for i in range(0,numberOfNetworks):
     events = [[[]]]
@@ -56,11 +60,11 @@ def generateNetworks(numberOfNetworks):
         values = []
         count = 0
         event = x+1
-        prob=60
+        prob=80
         #count != 2 and
         while event <= numberStates: # 2 to change by 4, the 2 in the for is to be switched to 8 (9 states)
             if random.randrange(100) < prob or event==x+2:
-                transition = str(x+1)+str(event)
+                transition = [str(x+1),str(event)]
                 newState.append(transition)
                 count += 1
             event += 1
@@ -88,7 +92,8 @@ def generateNetworks(numberOfNetworks):
     #print(events)
 #The output "events" gives for each iteration (100) the possible paths of a network
 
-def activity(network,i): # add a parameter iteration to access choose i times (uncomment i and while)
+
+def activity(network,i,numberStates): # add a parameter iteration to access choose i times (uncomment i and while)
     # i = 0
     # while i != iteration:
       print("RAW NETWORK" + str(network.edges.data()))
@@ -137,9 +142,7 @@ for i in range(0,len(events)):
     G.add_edges_from([tuple(list(events[i][e]))],weight=transitionMatrix[i][e][1],label=transitionMatrix[i][e])
 
 
-numberStates = 9 #Total number of states
-stable = 1
-unstable = 2
+
 #tabNetworks = generateNetworks(2)
 #network  = tabNetworks[0]
 #print(network)
@@ -175,7 +178,12 @@ def update(num):
     ax.set_yticks([])
 
 def fitness(path,graph):
-  total_cost = sum([graph[path[i]][path[i+1]][0]['weight'] for i in range(len(path)-1)])
+  total_cost = 0
+  try:
+    total_cost = sum([graph[path[i]][path[i+1]][0]['weight'] for i in range(len(path)-1)])
+  except KeyError:
+    print("KeyError with the path : "+str(path))
+  
   number_hops = len(path)
 
   return number_hops*10+total_cost
@@ -191,7 +199,6 @@ def normalize_fitness(fitness_paths_tab):
   for e in fitness_paths_tab:
     fitness_sum_final += e["fitness"]
   #verification that the normalization worked
-  print("fitness_sum_final = "+str(fitness_sum_final))
 
 
 def select_best_path(tab_paths,graph,number_paths,selected_paths_cross):
@@ -208,20 +215,17 @@ def select_best_path(tab_paths,graph,number_paths,selected_paths_cross):
 
   #Normalization 
   normalize_fitness(fitness_paths_tab)
+  
 
-  for i in range(0,number_paths):
+  for i in range(number_paths):
     #roulette selection
     selected_path = random.choices(fitness_paths_tab, [d['fitness'] for d in fitness_paths_tab], k=1)
     if selected_path[0]['path'] in selected_paths_cross:
       i -= 1
-      print("same path detected")
     else:
-      print("#### Selection of Paths :")
-      print("selected_path: "+ str(selected_path))
       # deleted the selected path so it won't be selected again
       fitness_paths_tab = [i for i in fitness_paths_tab if not (i['path'] == selected_path)] 
-      selected_paths_cross.append(selected_path[0]['path']) 
-
+      selected_paths_cross.append(selected_path[0]['path'])
 def findBestPath(network):
     pathsTab = []
     visitedNode = ["1"]
@@ -282,16 +286,20 @@ def intersection(lst1, lst2):
 
 def cross(indivA,indivB):
   listIntersect = intersection(indivA,indivB)
-  new_indivA = np.append(indivA[:int(listIntersect[1])],indivB[int(listIntersect[1]):])
-  new_indivB = np.append(indivB[:int(listIntersect[1])],indivA[int(listIntersect[1]):])
+  pointCrossover = 1
+  if len(listIntersect) > 1:
+    pointCrossover = int(random.choice(listIntersect))
+  new_indivA = np.append(indivA[:pointCrossover],indivB[pointCrossover:])
+  new_indivB = np.append(indivB[:pointCrossover],indivA[pointCrossover:])
   return [list(new_indivA),list(new_indivB)]
 
-def accepts(g, path):
-    return all(map(g.has_edge, path, path[1:]))
+def accepts(g, path,numberStates):
+    return all(map(g.has_edge, path, path[1:])) and path[len(path)-1] == numberStates
 
-def crossover(selected_population,graph):
+def crossover(selected_population,graph,numberStates):
   newGeneration = []
   sortList = []
+
 
   for individual in range(0,len(selected_population)):
       for i in range(individual+1,len(selected_population)):
@@ -301,30 +309,21 @@ def crossover(selected_population,graph):
           for e in cross(selected_population[individual],selected_population[i]):
             if e not in newGeneration:
               newGeneration.append(e)
-  print(newGeneration)
 
   for newInd in newGeneration:
-    if accepts(graph,newInd):
+    if accepts(graph,newInd,numberStates):
       sortList.append({
         "path" : newInd,
         "fitness" : fitness(newInd,graph)})
-      print(str(newInd)+" Is Valid")
-    else:
-      print(str(newInd)+" Is not Valid")
-
-        
-  
   for oldInd in selected_population:
     if not any(d.get('path') == oldInd for d in sortList):
       sortList.append({
         "path" : oldInd,
         "fitness" : fitness(oldInd,graph)})
 
-  print(sortList)
-
   sortList = sorted(sortList,key = lambda i: i['fitness'])
 
-  print(sortList)
+  return sortList
 
 
 '''A recursive function to print all paths from 'u' to 'd'. 
@@ -348,28 +347,92 @@ def allPathsUtil(network, u, d, visited, path,AllPaths):
   path.pop() 
   visited[int(u)]= False
 
-#ani = matplotlib.animation.FuncAnimation(fig, update, frames=6, interval=1000, repeat=True)
-#plt.show()
-count = 0
-tabNetwork = generateNetworks(10)
-mygraph = setNetwork(tabNetwork[0])
-#print(mygraph.edges)
-#print(mygraph.nodes)
+
+  
+def mutation(crossPathList,graph,probaMutation):
+  node2remove = ''
+  for path in crossPathList:
+    for i in range(0,len(path)):
+      if (random.random() < probaMutation):
+        if i != 0 and i != len(path['path'])-1:
+          setCommonNeigh = set(graph.successors(path['path'][i-1])).intersection(graph.predecessors(path['path'][i+1]))
+          try:
+            setCommonNeigh.remove(path['path'][i])
+          except KeyError:
+            print("path['path'][i] : "+path['path'][i])
+          if len(setCommonNeigh) > 0 and not graph.has_edge(path['path'][i-1],path['path'][i+1]):
+            selectedMutation = int(random.choice(list(setCommonNeigh)))
+            path['path'][i] = str(selectedMutation)
+            path['fitness'] = fitness(path['path'],graph)
+          elif graph.has_edge(path['path'][i-1],path['path'][i+1]):
+            node2remove = path['path'][i]
+    if node2remove != '':
+      path['path'].remove(node2remove)
+      node2remove = ''
 
 
+def maxFitness(resGATab):
+  maxPossible = 200000000
+  for res in resGATab:
+    if res['fitness'] < maxPossible:
+      maxPossible = res['fitness']
+  return maxPossible
 
-visited = [0]*(numberStates+1)
-path = []
-AllPaths = []
-selected_paths_cross = []
+# numberGraph = 5
+# numberStates = 9
+# tabNetwork = generateNetworksNoNb(numberGraph)
 
-pos=nx.spring_layout(mygraph)
-nx.draw(mygraph,pos)
+# selected_paths_cross = []
+# resTabGA = []
+# resNumberGA = []
+# for i in range(numberGraph):
+#   AllPaths = []
+#   path = []
+#   visited = [0]*(numberStates+1)
+#   mygraph = setNetwork(tabNetwork[i])
+#   allPathsUtil(mygraph,"1",str(numberStates),visited,path,AllPaths)
+#   print("###########################Select best paths ###################")
+#   print(mygraph.edges) 
+#   print(AllPaths)
+#   print(selected_paths_cross)
+#   select_best_path(AllPaths,mygraph,5,selected_paths_cross)
+#   print(selected_paths_cross)
+
+# for j in range(15):
+#   print("###########################Crossover###################")
+#   resTabGA = crossoverNoNb(selected_paths_cross,mygraph)
+#   mutation(resTabGA,mygraph,0.1)
+#   resNumberGA.append(maxFitness(resTabGA))
+# print(resNumberGA)
+
+resNumberGA = [] 
+def main(numberGraph,mutationRate,paramNumberStates,numberIterationCrossover):
+  tabNetwork = generateNetworks(numberGraph,paramNumberStates)
+  resTabGA = []
 
 
-allPathsUtil(mygraph,"1","9",visited,path,AllPaths)
-select_best_path(AllPaths,mygraph,5,selected_paths_cross)
-crossover(selected_paths_cross,mygraph)
+  for i in range(0,numberGraph):
+    visited = [0]*(paramNumberStates+1)
+    path = []
+    AllPaths = []
+    selected_paths_cross = []
+    mygraph = setNetwork(tabNetwork[i])
+    allPathsUtil(mygraph,"1",str(paramNumberStates),visited,path,AllPaths)
+    select_best_path(AllPaths,mygraph,8,selected_paths_cross)
+    localRes = []
+    for j in range(0,numberIterationCrossover):
+      resTabGA = crossover(selected_paths_cross,mygraph,paramNumberStates)
+      mutation(resTabGA,mygraph,mutationRate)
+      localRes.append(maxFitness(resTabGA))
+    resNumberGA.append(localRes)
+
+main(10,0.5,25,20)
+print(resNumberGA)
+plt.xlabel("X-axis")
+plt.ylabel("Y-axis")
+plt.title("A test graph")
+for i in range(len(resNumberGA)):
+    plt.plot([i for i in range(len(resNumberGA[0]))],[resNumberGA[i][j] for j in range(len(resNumberGA[i]))],label = 'id %s'%i)
+plt.legend()
 plt.show()
-
 
